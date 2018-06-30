@@ -1,0 +1,73 @@
+<div class="l_login_btn" onclick="instragram_login_func()">login</div>
+
+<script>
+/************************************************** instragramlogin ***************************************************/
+// Access token is required to make any endpoint calls,
+// http://instagram.com/developer/endpoints/
+
+var accessToken = null;
+var authenticateInstagram = function(instagramClientId, instagramRedirectUri, callback) {
+    // Pop-up window size, change if you want
+    var popupWidth = 700,
+        popupHeight = 500,
+        popupLeft = (window.screen.width - popupWidth) / 2,
+        popupTop = (window.screen.height - popupHeight) / 2;
+	// Url needs to point to instagram_auth.php
+	var popup = window.open('login', '', 'width='+popupWidth+',height='+popupHeight+',left='+popupLeft+',top='+popupTop+'');
+	// scopes for user profile permissions
+	var scopes = "basic+likes+comments";
+    popup.onload = function() {
+        // Open authorize url in pop-up
+        if(window.location.hash.length == 0) {
+           popup.open('https://instagram.com/oauth/authorize/?client_id='+instagramClientId+'&redirect_uri='+instagramRedirectUri+'&scope='+scopes+'&response_type=token', '_self');
+        }
+        // An interval runs to get the access token from the pop-up
+        var interval = setInterval(function() {
+            try {
+                // Check if hash exists
+                if(popup.location.hash.length) {
+                    // Hash found, that includes the access token
+                    clearInterval(interval);
+                    accessToken = popup.location.hash.slice(14); //slice #access_token= from string
+                    popup.close();
+                    if(callback != undefined && typeof callback == 'function'){
+                        callback();
+                    }
+                }
+            }
+            catch(evt) {
+                // Permission denied
+            }
+        }, 100);
+    };
+};
+
+
+
+function insta_login_callback(){
+    //alert("You are successfully logged in! Access Token: "+accessToken);
+    $.ajax({
+        type: "GET",
+        dataType: "jsonp",
+        url: "https://api.instagram.com/v1/users/self/?access_token="+accessToken,
+        success: function(response){
+            // Change button and show status
+            console.log(response);
+        }
+      });
+}
+
+
+// Authenticate instagram
+function instragram_login_func() {
+    authenticateInstagram(
+        'client id',
+        'redirect url',
+        insta_login_callback //optional - a callback function
+    );
+    return false;
+}
+
+
+/************************************************** instragramlogin ***************************************************/
+</script>
